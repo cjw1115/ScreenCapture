@@ -1,0 +1,28 @@
+﻿<Page x:Class="ScreenCapture.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:ScreenCapture"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+      mc:Ignorable="d">
+
+    <Grid>
+        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+            <Button x:Name="CaptureButton"
+                    Width="160"
+                    Click="Button_ClickAsync"
+                    Content="Capture" />
+
+            <Button x:Name="Stop"
+                    Width="160"
+                    Click="Stop_Click"
+                    Content="Stop" />
+
+            <Button x:Name="Save"
+                    Width="160"
+                    Click="Save_Click"
+                    Content="Save" />
+        </StackPanel>
+    </Grid>
+</Page>
