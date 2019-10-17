@@ -8,14 +8,13 @@
 
 using namespace winrt::Windows::Graphics::Capture;
 using namespace winrt::Windows::Graphics;
-using namespace winrt::Windows::Graphics::DirectX;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
+using namespace ABI::Windows::Graphics::DirectX;
 
 namespace winrt::ScreenCaptureComponent::implementation
 {
 	CaptureHelper::CaptureHelper()
 	{
-
 	}
 
 	void CaptureHelper::Stop()
@@ -24,72 +23,35 @@ namespace winrt::ScreenCaptureComponent::implementation
 		_framePool.Close();
 	}
 
-	void CaptureHelper::StartCaptureInternal(winrt::Windows::Foundation::TimeSpan spam, winrt::Windows::Media::Editing::MediaComposition mediaComposition, winrt::Windows::Graphics::Capture::GraphicsCaptureItem const& item)
+	winrt::com_ptr< ABI::Microsoft::Graphics::Canvas::ICanvasResourceCreator> canvasResourceCreator;
+
+	void CaptureHelper::StartCaptureInternal(winrt::Windows::Foundation::TimeSpan span, winrt::Windows::Media::Editing::MediaComposition mediaComposition, winrt::Windows::Graphics::Capture::GraphicsCaptureItem const& item)
 	{
-		_span = spam;
+		_span = span;
 		_mediaComposition = mediaComposition;
 		_nativeGraghic.GetCanvasBitmap(_canvasBitmapStatics.put());
 		_nativeGraghic.GetCanvasDevice(_device.put());
 		_nativeGraghic.GetCanvasRenderTargetFactory(_canvasRenderTargetFactory.put());
 
-		auto re = _device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
+		auto device = _device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
+		canvasResourceCreator = _device.as<ABI::Microsoft::Graphics::Canvas::ICanvasResourceCreator>();
+
 		auto size = item.Size();
-		_framePool = Direct3D11CaptureFramePool::Create(
-			re, // D3D device
-			DirectXPixelFormat::B8G8R8A8UIntNormalized, // Pixel format
-			2, // Number of frames
-			size); // Size of the buffers
-
+		_framePool = Direct3D11CaptureFramePool::Create(device, winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, size);
 		_framePool.FrameArrived({ this,&CaptureHelper::OnFrameArrived });
-		//_framePool.FrameArrived += async(s, a) = >
-		//{
-		//	// The FrameArrived event is raised for every frame on the thread
-		//	// that created the Direct3D11CaptureFramePool. This means we
-		//	// don't have to do a null-check here, as we know we're the only
-		//	// one dequeueing frames in our application.  
-
-		//	// NOTE: Disposing the frame retires it and returns  
-		//	// the buffer to the pool.
-
-		//	using (var frame = _framePool.TryGetNextFrame())
-		//	{
-		//		var softwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface);
-		//		ProcessFrame(softwareBitmap);
-		//	}
-		//};
-
-		//_item.Closed += (s, a) = >
-		//{
-		//	StopCapture();
-		//};
-
+		
 		_seesion = _framePool.CreateCaptureSession(item);
 		_seesion.StartCapture();
-		//_lastTime = DateTime.Now;
 	}
 	
 	void  CaptureHelper::OnFrameArrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool, Windows::Foundation::IInspectable)
 	{
 		auto frame = _framePool.TryGetNextFrame();
 		auto softwareBitmap= winrt::Windows::Graphics::Imaging::SoftwareBitmap::CreateCopyFromSurfaceAsync(frame.Surface()).get();
-		
 		ProcessFrame(softwareBitmap);
+		softwareBitmap.Close();
+		frame.Close();
 	}
-
-	/*public unsafe System.Span<byte> _getPixelBuffer(SoftwareBitmap softwareBitmap)
-	{
-		uint capacity;
-		using (BitmapBuffer buffer = softwareBitmap.LockBuffer(BitmapBufferAccessMode.Write))
-		{
-			using (var reference = buffer.CreateReference())
-			{
-				byte* dataInBytes;
-
-				((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
-				return new Span<byte>(dataInBytes, (int)capacity);
-			}
-		}
-	}*/
 
 #ifdef __cplusplus
 	struct __declspec(uuid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")) IMemoryBufferByteAccess :
@@ -106,37 +68,49 @@ namespace winrt::ScreenCaptureComponent::implementation
 	{
 		auto bitmapBuffer = softwareBitmap.LockBuffer(winrt::Windows::Graphics::Imaging::BitmapBufferAccessMode::Read);
 		auto reference = bitmapBuffer.CreateReference();
-		//auto guid = winrt::guid(0x5B0D3235, 0x4DBA, 0x4D44, { 0x86,0x5E,0x8F,0x1D,0x0E,0x4F,0xD0,0x4D });
 		auto byteAccess = reference.as<IMemoryBufferByteAccess>();
 		byteAccess->GetBuffer(buffer, count);
+		reference.Close();
+		bitmapBuffer.Close();
 	}
+
+	ABI::Windows::Foundation::Rect rect;
+	
 
 	void CaptureHelper::ProcessFrame(winrt::Windows::Graphics::Imaging::SoftwareBitmap softwareBitmap)
 	{
-		auto sharedDevice = _device.as<ABI::Microsoft::Graphics::Canvas::ICanvasResourceCreator>();
+		//auto canvasResourceCreator = 
 
 		byte* buffer = nullptr;
 		UINT32 count = 0;
 		_getPixelBuffer(softwareBitmap, &count, &buffer);
-		winrt::com_ptr<ABI::Microsoft::Graphics::Canvas::ICanvasBitmap> canvasBitmap;
-		_canvasBitmapStatics->CreateFromBytes(sharedDevice.get(), count, buffer, softwareBitmap.PixelWidth(), softwareBitmap.PixelHeight(),
-			ABI::Windows::Graphics::DirectX::DirectXPixelFormat::DirectXPixelFormat_B8G8R8A8UIntNormalized, canvasBitmap.put());
+		//auto bitmapBuffer = new byte[count];
+		//CopyMemory(bitmapBuffer, buffer, count);
+
+		ABI::Microsoft::Graphics::Canvas::ICanvasBitmap* canvasBitmap;
+		_canvasBitmapStatics->CreateFromBytes(canvasResourceCreator.get(), count, buffer, softwareBitmap.PixelWidth(), softwareBitmap.PixelHeight(),DirectXPixelFormat_B8G8R8A8UIntNormalized, &canvasBitmap);
 		
-		winrt::com_ptr< ABI::Microsoft::Graphics::Canvas::ICanvasRenderTarget> canvasRenderTarget;
-		_canvasRenderTargetFactory->CreateWithWidthAndHeightAndDpi(sharedDevice.get(), softwareBitmap.PixelWidth(), softwareBitmap.PixelHeight(),96, canvasRenderTarget.put());
+		ABI::Microsoft::Graphics::Canvas::ICanvasRenderTarget* canvasRenderTarget;
+		_canvasRenderTargetFactory->CreateWithWidthAndHeightAndDpi(canvasResourceCreator.get(), (float)softwareBitmap.PixelWidth(), (float)softwareBitmap.PixelHeight(),96, &canvasRenderTarget);
 
-		winrt::com_ptr< ABI::Microsoft::Graphics::Canvas::ICanvasDrawingSession> canvasDrawingSession;
-
-		canvasRenderTarget->CreateDrawingSession(canvasDrawingSession.put());
+		ABI::Microsoft::Graphics::Canvas::ICanvasDrawingSession* canvasDrawingSession;
+		canvasRenderTarget->CreateDrawingSession(&canvasDrawingSession);
 		canvasDrawingSession->Clear(ABI::Windows::UI::Color());
-		ABI::Windows::Foundation::Rect r;
-		r.X = 0;
-		r.Y = 0;
-		r.Width = softwareBitmap.PixelWidth();
-		r.Height= softwareBitmap.PixelHeight();
-		canvasDrawingSession->DrawImageToRect(canvasBitmap.get(), r);
+		
+		rect.X = 0;
+		rect.Y = 0;
+		rect.Width = (float)softwareBitmap.PixelWidth();
+		rect.Height= (float)softwareBitmap.PixelHeight();
+		canvasDrawingSession->DrawImageToRect(canvasBitmap, rect);
+		//delete[] bitmapBuffer;
+		canvasBitmap->Release();
+		canvasDrawingSession->Release();
 
-		auto clip = winrt::Windows::Media::Editing::MediaClip::CreateFromSurface(canvasRenderTarget.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface>(), _span);
+		winrt::com_ptr< ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface> surface;
+		canvasRenderTarget->QueryInterface(ABI::Windows::Graphics::DirectX::Direct3D11::IID_IDirect3DSurface, (void**)surface.put());
+		canvasRenderTarget->Release();
+		auto winrtSruface = surface.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface>();
+		auto clip = winrt::Windows::Media::Editing::MediaClip::CreateFromSurface(winrtSruface, _span);
 		_mediaComposition.Clips().Append(clip);
 	}
 }

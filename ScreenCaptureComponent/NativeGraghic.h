@@ -1,6 +1,7 @@
 #pragma once
 #include <Microsoft.Graphics.Canvas.h>
 #include <winrt/Windows.Graphics.DirectX.Direct3D11.h>
+
 class NativeGraghic
 {
 public:
