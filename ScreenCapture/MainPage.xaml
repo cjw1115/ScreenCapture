@@ -13,17 +13,17 @@
                     Spacing="8">
             <Button x:Name="CaptureButton"
                     Width="160"
-                    Click="Button_ClickAsync"
+                    Click="_btnStartClickAsync"
                     Content="Capture" />
 
             <Button x:Name="Stop"
                     Width="160"
-                    Click="Stop_Click"
+                    Click="_btnStopClick"
                     Content="Stop" />
 
             <Button x:Name="Save"
                     Width="160"
-                    Click="Save_Click"
+                    Click="_btnSaveClick"
                     Content="Save" />
         </StackPanel>
     </Grid>
