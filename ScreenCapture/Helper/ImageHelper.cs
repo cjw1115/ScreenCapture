@@ -7,7 +7,7 @@ using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace ScreenCapture
+namespace ScreenCapture.Helper
 {
     public class ImageHelper
     {
