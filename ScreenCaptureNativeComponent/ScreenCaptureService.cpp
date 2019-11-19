@@ -45,6 +45,18 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		return storageFolder;
 	}
 
+	void ScreenCaptureService::OnFrameArraved(Direct3D11CaptureFramePool const& framePool, winrt::Windows::Foundation::IInspectable const&)
+	{
+		auto frame = framePool.TryGetNextFrame();
+		
+		auto bitmap = SoftwareBitmap::CreateCopyFromSurfaceAsync(frame.Surface(), BitmapAlphaMode::Premultiplied).get();
+		ABI::Windows::Graphics::Imaging::ISoftwareBitmap* pBitmap = nullptr;
+		bitmap.as<ABI::Windows::Graphics::Imaging::ISoftwareBitmap>().copy_to(&pBitmap);
+		pBitmap->AddRef();
+		_capturedImages.push(pBitmap);
+		_captuedRelatedTimes.push(frame.SystemRelativeTime());
+		frame.Close();
+	}
 	void ScreenCaptureService::_startCaptureInternal(GraphicsCaptureItem item)
 	{
 		_capturedImages.clear();
@@ -53,20 +65,10 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		NativeGraghic::GetCanvasDevice(canvasDevice.put());
 		Direct3D11::IDirect3DDevice device{ nullptr };
 		winrt::copy_from_abi(device, canvasDevice.get());
-		_framePool = Direct3D11CaptureFramePool::Create(device, DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, item.Size());
+		_framePool = Direct3D11CaptureFramePool::Create(device, DirectXPixelFormat::B8G8R8A8UIntNormalized, 3, item.Size());
 
-		_framePool.FrameArrived([this](Direct3D11CaptureFramePool const&, IInspectable const&)->IAsyncAction
-			{
-				auto frame = _framePool.TryGetNextFrame();
-				auto bitmap = co_await SoftwareBitmap::CreateCopyFromSurfaceAsync(frame.Surface(), BitmapAlphaMode::Premultiplied);
-				ABI::Windows::Graphics::Imaging::ISoftwareBitmap* pBitmap;
-				bitmap.as<ABI::Windows::Graphics::Imaging::ISoftwareBitmap>().copy_to(&pBitmap);
-				pBitmap->AddRef();
-				_capturedImages.push(pBitmap);
-
-				_captuedRelatedTimes.push(frame.SystemRelativeTime());
-				frame.Close();
-			});
+		_framePool.FrameArrived({ this,&ScreenCaptureService::OnFrameArraved });
+		
 		_seesion = _framePool.CreateCaptureSession(item);
 		_seesion.StartCapture();
 		

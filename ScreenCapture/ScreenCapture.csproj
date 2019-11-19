@@ -164,9 +164,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="ScreenCaptureNativeComponent">
-      <HintPath>..\x64\Debug\ScreenCaptureNativeComponent\ScreenCaptureNativeComponent.winmd</HintPath>
-    </Reference>
+    <ProjectReference Include="..\ScreenCaptureNativeComponent\ScreenCaptureNativeComponent.vcxproj">
+      <Project>{9bbf348f-4f92-4820-a8e9-3d39b73d0c8e}</Project>
+      <Name>ScreenCaptureNativeComponent</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

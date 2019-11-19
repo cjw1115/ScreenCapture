@@ -28,6 +28,7 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFolder> _setupCpatureFolder();
 		void _startCaptureInternal(winrt::Windows::Graphics::Capture::GraphicsCaptureItem item);
 		winrt::Windows::Foundation::IAsyncAction _renderCaptuedImagesToFiles();
+		void OnFrameArraved(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const& framePool, winrt::Windows::Foundation::IInspectable const&);
 	private:
 		const wchar_t* CAPTURE_FOLDER = L"CaptureFolder";
 		Windows::Storage::StorageFolder _captureFolder{ nullptr };
