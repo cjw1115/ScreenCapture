@@ -45,10 +45,26 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		return storageFolder;
 	}
 
-	void ScreenCaptureService::OnFrameArraved(Direct3D11CaptureFramePool const& framePool, winrt::Windows::Foundation::IInspectable const&)
+    LARGE_INTEGER _last;
+    LARGE_INTEGER _now;
+	void ScreenCaptureService::_onFrameArraved(Direct3D11CaptureFramePool const& framePool)
 	{
 		auto frame = framePool.TryGetNextFrame();
-		
+        if (frame == nullptr)
+        {
+            return;
+        }
+
+        /*QueryPerformanceCounter(&_now);
+        auto delta = _now.QuadPart - _last.QuadPart;
+        if (delta <= 0.04)
+        {
+            frame.Close();
+            std::this_thread::sleep_for(std::chrono::milliseconds((int)((0.04 - delta) * 1000)));
+            return;
+        }
+        _last = _now;*/
+
 		auto bitmap = SoftwareBitmap::CreateCopyFromSurfaceAsync(frame.Surface(), BitmapAlphaMode::Premultiplied).get();
 		ABI::Windows::Graphics::Imaging::ISoftwareBitmap* pBitmap = nullptr;
 		bitmap.as<ABI::Windows::Graphics::Imaging::ISoftwareBitmap>().copy_to(&pBitmap);
@@ -57,37 +73,49 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		_captuedRelatedTimes.push(frame.SystemRelativeTime());
 		frame.Close();
 	}
+
 	void ScreenCaptureService::_startCaptureInternal(GraphicsCaptureItem item)
 	{
 		_capturedImages.clear();
 		_captuedRelatedTimes.clear();
-		winrt::com_ptr<ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice> canvasDevice;
-		NativeGraghic::GetCanvasDevice(canvasDevice.put());
-		Direct3D11::IDirect3DDevice device{ nullptr };
-		winrt::copy_from_abi(device, canvasDevice.get());
-		_framePool = Direct3D11CaptureFramePool::Create(device, DirectXPixelFormat::B8G8R8A8UIntNormalized, 3, item.Size());
+        std::thread([&, item]()
+            {
+                winrt::com_ptr<ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice> canvasDevice;
+                NativeGraghic::GetCanvasDevice(canvasDevice.put());
+                Direct3D11::IDirect3DDevice device{ nullptr };
+                winrt::copy_from_abi(device, canvasDevice.get());
 
-		_framePool.FrameArrived({ this,&ScreenCaptureService::OnFrameArraved });
-		
-		_seesion = _framePool.CreateCaptureSession(item);
-		_seesion.StartCapture();
-		
-		LARGE_INTEGER counter,frequency;
-		QueryPerformanceCounter(&counter);
-		QueryPerformanceFrequency(&frequency);
-		auto time = counter.QuadPart / frequency.QuadPart;
-		_startTime = Windows::Foundation::TimeSpan(std::chrono::seconds(time));
+                _framePool = Direct3D11CaptureFramePool::Create(device, DirectXPixelFormat::B8G8R8A8UIntNormalized, 1, item.Size());
+                //_framePool.FrameArrived({ this,&ScreenCaptureService::OnFrameArraved });
+
+                _seesion = _framePool.CreateCaptureSession(item);
+                _capturing = true;
+                _seesion.StartCapture();
+
+                LARGE_INTEGER counter, frequency;
+                QueryPerformanceCounter(&counter);
+                QueryPerformanceFrequency(&frequency);
+                auto time = counter.QuadPart / frequency.QuadPart;
+                _startTime = Windows::Foundation::TimeSpan(std::chrono::seconds(time));
+
+                QueryPerformanceCounter(&_last);
+                while (_capturing)
+                {
+                    _onFrameArraved(_framePool);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+            }).detach();
 	}
 
     IAsyncAction ScreenCaptureService::StartCaptureAsync()
     {
 		GraphicsCapturePicker picker;
-		auto item = co_await picker.PickSingleItemAsync();
+        auto item = co_await picker.PickSingleItemAsync();
 		if (item != nullptr)
 		{
 			_captureFolder = co_await _setupCpatureFolder();
-			_startCaptureInternal(item);
-			std::thread([this]() 
+            _startCaptureInternal(item);
+			std::thread([this,&item]()
 				{
 					_renderCaptuedImagesToFiles();
 				}).detach();
@@ -95,6 +123,7 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
     }
     void ScreenCaptureService::StopCapture()
     {
+        _capturing = false;
 		_seesion.Close();
 		_framePool.Close();
     }
