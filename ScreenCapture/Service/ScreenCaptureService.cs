@@ -26,6 +26,7 @@ namespace ScreenCapture.Service
         private static extern bool QueryPerformanceCounter(out long lpPerformanceCount);
 
         private readonly string CAPTURE_FOLDER = "CaptureFolder";
+        private readonly string CAPTURE_AUIDO_FILE = "loopback.wav";
         private MediaComposition _mediaComposition;
         private Direct3D11CaptureFramePool _framePool;
         private GraphicsCaptureSession _seesion;
@@ -36,6 +37,9 @@ namespace ScreenCapture.Service
         private ConcurrentQueue<TimeSpan> _captuedRelatedTimes;
         private uint _imageCounter = 0;
         private bool _capturing = false;
+
+        private StorageFile _audioFile;
+        private AudioCaptureNativeComponent.Capture _audioCapture = new AudioCaptureNativeComponent.Capture(AudioCaptureNativeComponent.RoleMode.Loopback);
 
         private async Task<StorageFolder> _setupCpatureFolder()
         {
@@ -66,7 +70,10 @@ namespace ScreenCapture.Service
             if (item != null)
             {
                 _captureFolder = await _setupCpatureFolder();
+                _audioFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_FILE, CreationCollisionOption.ReplaceExisting);
+
                 _startCaptureInternal(item);
+                await _audioCapture.Start(_audioFile);
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 Task.Run(() =>
                 {
@@ -79,6 +86,8 @@ namespace ScreenCapture.Service
         private void StopCapture()
         {
             _capturing = false;
+
+            _audioCapture.Stop();
 
             _seesion.Dispose();
             _framePool.Dispose();
@@ -144,7 +153,7 @@ namespace ScreenCapture.Service
         private async Task SetupMediaComposition()
         {
             var _capturedImageFiles = await _captureFolder.GetFilesAsync();
-            var fileNames = _capturedImageFiles.Select(m => m.Name).ToList();
+            var fileNames = _capturedImageFiles.Where(m=>m.Name!= CAPTURE_AUIDO_FILE).Select(m => m.Name).ToList();
             _mediaComposition = new MediaComposition();
             var lastTime = _startTime;
             foreach (var imageFile in _capturedImageFiles)
@@ -157,6 +166,7 @@ namespace ScreenCapture.Service
                     _mediaComposition.Clips.Add(clip);
                 }
             }
+            _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioFile));
         }
 
         private async Task RenderCompositionToFile(Windows.Storage.StorageFile file,Windows.UI.Xaml.Controls.ProgressBar progressBar)

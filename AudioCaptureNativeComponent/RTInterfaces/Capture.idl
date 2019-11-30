@@ -1,0 +1,28 @@
+namespace AudioCaptureNativeComponent
+{
+    [default_interface]
+    runtimeclass Capture
+    {
+        Capture();
+        Capture(RoleMode role);
+        void Initialize();
+        Windows.Foundation.IAsyncAction Start(Windows.Storage.StorageFile targetFile);
+        void Resume();
+		void Pause();
+		void Stop();
+		void Reset();
+
+		event Windows.Foundation.EventHandler<__int64> DataReceived;
+        event Windows.Foundation.EventHandler<int> CaptureStop;
+
+        RoleMode Role{ get; set; };
+
+		Windows.Foundation.IAsyncAction SetPlaybackFile(Windows.Storage.StorageFile targetFile);
+		void SetPlaybackPosition(UInt32 Position);
+    }
+    enum RoleMode
+    {
+        Capture,
+        Loopback
+    };
+}

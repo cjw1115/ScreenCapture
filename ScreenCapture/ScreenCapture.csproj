@@ -121,6 +121,8 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helper\ImageHelper.cs" />
+    <Compile Include="Helper\PermissionHelper.cs" />
+    <Compile Include="Helper\UIUtility.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -164,6 +166,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AudioCaptureNativeComponent\AudioCaptureNativeComponent.vcxproj">
+      <Project>{edaa4c54-8cea-4dd5-8774-3378e96c9584}</Project>
+      <Name>AudioCaptureNativeComponent</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ScreenCaptureNativeComponent\ScreenCaptureNativeComponent.vcxproj">
       <Project>{9bbf348f-4f92-4820-a8e9-3d39b73d0c8e}</Project>
       <Name>ScreenCaptureNativeComponent</Name>

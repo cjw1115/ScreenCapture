@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ScreenCapture.Helper;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -71,6 +72,7 @@ namespace ScreenCapture
                 // Ensure the current window is active
                 Window.Current.Activate();
             }
+            UIUtility.SetDispatcher(Window.Current.Dispatcher);
         }
 
         /// <summary>

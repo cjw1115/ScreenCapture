@@ -23,15 +23,29 @@ using ScreenCapture.Service;
 
 using Native = ScreenCaptureNativeComponent;
 using Managed = ScreenCapture.Service;
+using ScreenCapture.Helper;
+
 namespace ScreenCapture
 {
     public sealed partial class MainPage : Page
     {
         private bool _isNativeMode = false;
         private ScreenCaptureNativeComponent.IScreenCaptureService _screenCapture = new Managed.ScreenCaptureService();
+        
         public MainPage()
         {
             InitializeComponent();
+            _initializeCapture();
+        }
+
+        public async Task CheckPermission()
+        {
+            var (re, msg) = await PermissionHelper.RequestMicrophonePermission();
+        }
+
+        private async Task _initializeCapture()
+        {
+            await CheckPermission();
         }
 
         private async void _btnStartClickAsync(object sender, RoutedEventArgs e)
