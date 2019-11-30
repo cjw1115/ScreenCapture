@@ -1,5 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas;
 using ScreenCapture.Helper;
+using ScreenCaptureNativeComponent;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -15,10 +16,11 @@ using Windows.Media.MediaProperties;
 using Windows.Media.Transcoding;
 using Windows.Storage;
 using Windows.UI.Popups;
+using Windows.UI.Xaml.Controls;
 
 namespace ScreenCapture.Service
 {
-    public class ScreenCaptureService
+    public class ScreenCaptureService:ScreenCaptureNativeComponent.IScreenCaptureService
     {
         [DllImport("Kernel32.dll")]
         private static extern bool QueryPerformanceCounter(out long lpPerformanceCount);
@@ -33,7 +35,7 @@ namespace ScreenCapture.Service
         private ConcurrentQueue<SoftwareBitmap> _capturedImages;
         private ConcurrentQueue<TimeSpan> _captuedRelatedTimes;
         private uint _imageCounter = 0;
-
+        private bool _capturing = false;
 
         private async Task<StorageFolder> _setupCpatureFolder()
         {
@@ -57,7 +59,7 @@ namespace ScreenCapture.Service
             return storageFolder;
         }
 
-        public async Task StartCaptureAsync()
+        private async Task StartCaptureAsync()
         {
             var picker = new GraphicsCapturePicker();
             GraphicsCaptureItem item = await picker.PickSingleItemAsync();
@@ -74,8 +76,10 @@ namespace ScreenCapture.Service
             }
         }
 
-        public void StopCapture()
+        private void StopCapture()
         {
+            _capturing = false;
+
             _seesion.Dispose();
             _framePool.Dispose();
         }
@@ -85,24 +89,40 @@ namespace ScreenCapture.Service
             _capturedImages = new ConcurrentQueue<SoftwareBitmap>();
             _captuedRelatedTimes = new ConcurrentQueue<TimeSpan>();
 
-            _framePool = Direct3D11CaptureFramePool.Create(CanvasDevice.GetSharedDevice(), DirectXPixelFormat.B8G8R8A8UIntNormalized, 3, item.Size);
-            _framePool.FrameArrived += (o, e) =>
+            _framePool = Direct3D11CaptureFramePool.Create(CanvasDevice.GetSharedDevice(), DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, item.Size);
+            _seesion = _framePool.CreateCaptureSession(item);
+            _seesion.StartCapture();
+            _capturing = true;
+
+            QueryPerformanceCounter(out long counter);
+            _startTime = TimeSpan.FromTicks(counter);
+            Task.Run(_onFrameArraved);
+        }
+
+        private async void _onFrameArraved()
+        {
+            while (_capturing)
             {
+                QueryPerformanceCounter(out long start);
                 using (var frame = _framePool.TryGetNextFrame())
                 {
-                    var bitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied).AsTask().Result;
+                    if (frame == null)
+                        continue;
+                    var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied);
 
                     _capturedImages.Enqueue(bitmap);
                     _captuedRelatedTimes.Enqueue(frame.SystemRelativeTime);
                 }
-            };
-            _seesion = _framePool.CreateCaptureSession(item);
-            _seesion.StartCapture();
-            QueryPerformanceCounter(out long counter);
-            _startTime = TimeSpan.FromTicks(counter);
+                QueryPerformanceCounter(out long end);
+                var spendTime = TimeSpan.FromTicks(end - start);
+                if (spendTime < TimeSpan.FromMilliseconds(41))
+                {
+                    await Task.Delay((TimeSpan.FromMilliseconds(41) - spendTime).Milliseconds);
+                }
+            }
         }
 
-        public async Task<bool> VerifyDuration()
+        private async Task<bool> VerifyDuration()
         {
             var durations = _captuedRelatedTimes.ToList();
             var last = durations[0];
@@ -121,7 +141,7 @@ namespace ScreenCapture.Service
             return true;
         }
 
-        public async Task SetupMediaComposition()
+        private async Task SetupMediaComposition()
         {
             var _capturedImageFiles = await _captureFolder.GetFilesAsync();
             var fileNames = _capturedImageFiles.Select(m => m.Name).ToList();
@@ -139,13 +159,13 @@ namespace ScreenCapture.Service
             }
         }
 
-        public async Task RenderCompositionToFile(Windows.Storage.StorageFile file,Windows.UI.Xaml.Controls.ProgressBar progressBar)
+        private async Task RenderCompositionToFile(Windows.Storage.StorageFile file,Windows.UI.Xaml.Controls.ProgressBar progressBar)
         {
             if (file != null)
             {
                 // Call RenderToFileAsync
-                var mp4Profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD720p);
-                var saveOperation = _mediaComposition.RenderToFileAsync(file, MediaTrimmingPreference.Precise, mp4Profile);
+                var mp4Profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
+                var saveOperation = _mediaComposition.RenderToFileAsync(file, MediaTrimmingPreference.Fast, mp4Profile);
                 saveOperation.Progress = new AsyncOperationProgressHandler<TranscodeFailureReason, double>((info, progress) =>
                 {
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -194,7 +214,7 @@ namespace ScreenCapture.Service
             }
         }
 
-        public async Task WaitForImageRenderring()
+        private async Task WaitForImageRenderring()
         {
             while (_capturedImages.Count > 0)
             {
@@ -202,5 +222,36 @@ namespace ScreenCapture.Service
             }
             return;
         }
+
+        #region Interface proxy
+        IAsyncAction IScreenCaptureService.StartCaptureAsync()
+        {
+            return StartCaptureAsync().AsAsyncAction();
+        }
+
+        void IScreenCaptureService.VerifyDuration()
+        {
+        }
+
+        IAsyncAction IScreenCaptureService.SetupMediaComposition()
+        {
+            return SetupMediaComposition().AsAsyncAction();
+        }
+
+        IAsyncAction IScreenCaptureService.RenderCompositionToFile(StorageFile file, ProgressBar progressBar)
+        {
+            return RenderCompositionToFile(file, progressBar).AsAsyncAction();
+        }
+
+        IAsyncAction IScreenCaptureService.WaitForImageRenderring()
+        {
+            return WaitForImageRenderring().AsAsyncAction();
+        }
+
+        void IScreenCaptureService.StopCapture()
+        {
+            StopCapture();
+        }
+        #endregion
     }
 }

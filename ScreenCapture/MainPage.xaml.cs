@@ -21,12 +21,14 @@ using System.IO;
 using Windows.UI.Popups;
 using ScreenCapture.Service;
 
+using Native = ScreenCaptureNativeComponent;
+using Managed = ScreenCapture.Service;
 namespace ScreenCapture
 {
     public sealed partial class MainPage : Page
     {
-        //private ScreenCaptureService _screenCapture = new ScreenCaptureService();
-        private ScreenCaptureNativeComponent.ScreenCaptureService _screenCapture = new ScreenCaptureNativeComponent.ScreenCaptureService();
+        private bool _isNativeMode = false;
+        private ScreenCaptureNativeComponent.IScreenCaptureService _screenCapture = new Managed.ScreenCaptureService();
         public MainPage()
         {
             InitializeComponent();
@@ -70,6 +72,19 @@ namespace ScreenCapture
                 await new MessageDialog(ex.Message).ShowAsync();
             }
 
+        }
+
+        
+        private void cbMode_Checked(object sender, RoutedEventArgs e)
+        {
+            _isNativeMode = true;
+            _screenCapture = new Native.ScreenCaptureService();
+        }
+
+        private void cbMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isNativeMode = false;
+            _screenCapture = new Managed.ScreenCaptureService();
         }
     }
 }
