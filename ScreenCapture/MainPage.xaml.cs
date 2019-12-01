@@ -37,9 +37,12 @@ namespace ScreenCapture
         private ScreenCaptureNativeComponent.IScreenCaptureService _screenCapture = new Managed.ScreenCaptureService();
 
 
-        private readonly string CAPTURE_AUIDO_FILE = "loopback.wav";
-        private StorageFile _audioFile;
-        private AudioCaptureNativeComponent.Capture _audioCapture = new AudioCaptureNativeComponent.Capture(AudioCaptureNativeComponent.RoleMode.Loopback);
+        private readonly string CAPTURE_AUIDO_LOOPBACK_FILE = "loopback.wav";
+        private StorageFile _audioLoopbackFile;
+        private AudioCaptureNativeComponent.Capture _loopbackCapture = new AudioCaptureNativeComponent.Capture(AudioCaptureNativeComponent.RoleMode.Loopback);
+        private readonly string CAPTURE_AUIDO_VOICE_FILE = "voice.wav";
+        private StorageFile _audioVoiceFile;
+        private AudioCaptureNativeComponent.Capture _voiceCapture = new AudioCaptureNativeComponent.Capture(AudioCaptureNativeComponent.RoleMode.Capture);
 
         public MainPage()
         {
@@ -58,15 +61,20 @@ namespace ScreenCapture
 
         private async void _btnStartClickAsync(object sender, RoutedEventArgs e)
         {
-            _audioFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_FILE, CreationCollisionOption.ReplaceExisting);
+            _audioLoopbackFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_LOOPBACK_FILE, CreationCollisionOption.ReplaceExisting);
+            _audioVoiceFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_VOICE_FILE, CreationCollisionOption.ReplaceExisting);
+
+            await _loopbackCapture.Start(_audioLoopbackFile);
+            await _voiceCapture.Start(_audioVoiceFile);
+
             await _screenCapture.StartCaptureAsync();
-            await _audioCapture.Start(_audioFile);
         }
 
         private void _btnStopClick(object sender, RoutedEventArgs e)
         {
             _screenCapture.StopCapture();
-            _audioCapture.Stop();
+            _loopbackCapture.Stop();
+            _voiceCapture.Stop();
         }
 
         private async void _btnSaveClick(object sender, RoutedEventArgs e)
@@ -84,7 +92,8 @@ namespace ScreenCapture
 
                 await _screenCapture.WaitForImageRenderring();
                 await _screenCapture.SetupMediaComposition(_mediaComposition);
-                _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioFile));
+                _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioVoiceFile));
+                _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioLoopbackFile));
                 await _screenCapture.RenderCompositionToFile(file,progressBar);
             }
             catch (Exception ex)

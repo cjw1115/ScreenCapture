@@ -12,26 +12,15 @@
 
 namespace winrt::AudioCaptureNativeComponent::implementation
 {
-	Capture::Capture()
-	{
-	}
-
 	Capture::Capture(AudioCaptureNativeComponent::RoleMode role)
 	{
-		Role(role);
+		_roleMode = role;
+		Initialize();
 	}
 	
 	AudioCaptureNativeComponent::RoleMode Capture::Role()
 	{
 		return _roleMode;
-	}
-	void Capture::Role(AudioCaptureNativeComponent::RoleMode value)
-	{
-		if (_roleMode != value)
-		{
-			_roleMode = value;
-			Initialize();
-		}
 	}
 
 	void Capture::Initialize()
