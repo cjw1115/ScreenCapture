@@ -131,8 +131,10 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
     {
         /*throw hresult_not_implemented();*/
     }
-    IAsyncAction ScreenCaptureService::SetupMediaComposition()
+    IAsyncAction ScreenCaptureService::SetupMediaComposition(MediaComposition mediaComposition)
     {
+		_mediaComposition = mediaComposition;
+
 		auto _capturedImageFiles = co_await _captureFolder.GetFilesAsync();
 		auto lastTime = _startTime;
 	

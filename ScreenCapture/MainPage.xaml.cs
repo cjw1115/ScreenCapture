@@ -24,38 +24,49 @@ using ScreenCapture.Service;
 using Native = ScreenCaptureNativeComponent;
 using Managed = ScreenCapture.Service;
 using ScreenCapture.Helper;
+using ScreenCapture.Services;
 
 namespace ScreenCapture
 {
     public sealed partial class MainPage : Page
     {
+        private MediaComposition _mediaComposition = new MediaComposition();
+        private UINotificationService _notificationService = new UINotificationService();
+
         private bool _isNativeMode = false;
         private ScreenCaptureNativeComponent.IScreenCaptureService _screenCapture = new Managed.ScreenCaptureService();
-        
+
+
+        private readonly string CAPTURE_AUIDO_FILE = "loopback.wav";
+        private StorageFile _audioFile;
+        private AudioCaptureNativeComponent.Capture _audioCapture = new AudioCaptureNativeComponent.Capture(AudioCaptureNativeComponent.RoleMode.Loopback);
+
         public MainPage()
         {
             InitializeComponent();
-            _initializeCapture();
+            this.Loaded += MainPage_Loaded;
         }
 
-        public async Task CheckPermission()
+        private async void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             var (re, msg) = await PermissionHelper.RequestMicrophonePermission();
-        }
-
-        private async Task _initializeCapture()
-        {
-            await CheckPermission();
+            if(!re)
+            {
+                await _notificationService.Notify(msg);
+            }
         }
 
         private async void _btnStartClickAsync(object sender, RoutedEventArgs e)
         {
+            _audioFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_FILE, CreationCollisionOption.ReplaceExisting);
             await _screenCapture.StartCaptureAsync();
+            await _audioCapture.Start(_audioFile);
         }
 
         private void _btnStopClick(object sender, RoutedEventArgs e)
         {
             _screenCapture.StopCapture();
+            _audioCapture.Stop();
         }
 
         private async void _btnSaveClick(object sender, RoutedEventArgs e)
@@ -72,12 +83,8 @@ namespace ScreenCapture
                 Windows.Storage.StorageFile file = await picker.PickSaveFileAsync();
 
                 await _screenCapture.WaitForImageRenderring();
-
-                //if (!await _screenCapture.VerifyDuration())
-                //{
-                //    return;
-                //}
-                await _screenCapture.SetupMediaComposition();
+                await _screenCapture.SetupMediaComposition(_mediaComposition);
+                _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioFile));
                 await _screenCapture.RenderCompositionToFile(file,progressBar);
             }
             catch (Exception ex)
@@ -85,7 +92,6 @@ namespace ScreenCapture
                 progressBar.Foreground = new SolidColorBrush(Colors.Red);
                 await new MessageDialog(ex.Message).ShowAsync();
             }
-
         }
 
         

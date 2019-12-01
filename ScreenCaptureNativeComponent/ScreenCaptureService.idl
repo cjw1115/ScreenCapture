@@ -5,7 +5,7 @@ namespace ScreenCaptureNativeComponent
 		Windows.Foundation.IAsyncAction StartCaptureAsync();
 		void StopCapture();
 		void VerifyDuration();
-		Windows.Foundation.IAsyncAction SetupMediaComposition();
+		Windows.Foundation.IAsyncAction SetupMediaComposition(Windows.Media.Editing.MediaComposition mediaComposition);
 		Windows.Foundation.IAsyncAction RenderCompositionToFile(Windows.Storage.StorageFile file, Windows.UI.Xaml.Controls.ProgressBar progressBar);
 		Windows.Foundation.IAsyncAction WaitForImageRenderring();
 	};

@@ -83,7 +83,7 @@ void CaptureHelper::Start(const std::function<void(WAVEFORMATEX*)>& notifyStart,
 						hr = captureClient->GetBuffer(&buffer, &frameCount, &flag, NULL, NULL);
 						if (flag == AUDCLNT_BUFFERFLAGS_SILENT)
 						{
-							//Do not record;
+							notifyProcessing((byte*)buffer, frameCount * wavFormat->nBlockAlign);
 						}
 						else
 						{

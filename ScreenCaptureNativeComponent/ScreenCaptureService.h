@@ -21,7 +21,7 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		winrt::Windows::Foundation::IAsyncAction StartCaptureAsync();
         void StopCapture();
         void VerifyDuration();
-		winrt::Windows::Foundation::IAsyncAction SetupMediaComposition();
+		winrt::Windows::Foundation::IAsyncAction SetupMediaComposition(winrt::Windows::Media::Editing::MediaComposition mediaComposition);
 		winrt::Windows::Foundation::IAsyncAction RenderCompositionToFile(Windows::Storage::StorageFile const& file, Windows::UI::Xaml::Controls::ProgressBar const& progressBar);
 		winrt::Windows::Foundation::IAsyncAction WaitForImageRenderring();
 	private:
@@ -40,7 +40,7 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
 		UINT _imageCounter = 0;
 		winrt::Windows::Foundation::TimeSpan _startTime;
 
-		winrt::Windows::Media::Editing::MediaComposition _mediaComposition;
+		winrt::Windows::Media::Editing::MediaComposition _mediaComposition{ nullptr };
 
         bool _capturing = false;
     };

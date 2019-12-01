@@ -128,6 +128,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ScreenCaptureService.cs" />
+    <Compile Include="Service\UINotifycationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -174,6 +175,12 @@
       <Project>{9bbf348f-4f92-4820-a8e9-3d39b73d0c8e}</Project>
       <Name>ScreenCaptureNativeComponent</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Assets\Strings\Resources.language-en.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Assets\Strings\Resources.language-zh-cn.resw" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
