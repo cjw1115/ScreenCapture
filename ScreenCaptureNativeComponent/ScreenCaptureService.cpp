@@ -153,36 +153,6 @@ namespace winrt::ScreenCaptureNativeComponent::implementation
     }
 	IAsyncAction ScreenCaptureService::RenderCompositionToFile(StorageFile const& file, ProgressBar const& progressBar)
     {
-		if (file != nullptr)
-		{
-			// Call RenderToFileAsync
-			auto mp4Profile = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::HD1080p);
-			auto saveOperation = _mediaComposition.RenderToFileAsync(file, MediaTrimmingPreference::Precise, mp4Profile);
-			saveOperation.Progress([progressBar](IAsyncOperationWithProgress<TranscodeFailureReason,double> const& info, double const& progress)
-				{
-
-					progressBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [progressBar,progress]()
-						{
-							std::wstring msg = L"Progress:" + (int)progress;
-							OutputDebugString(msg.c_str());
-						});
-				});
-			saveOperation.Completed([&progressBar](IAsyncOperationWithProgress<TranscodeFailureReason, double> const& info, winrt::Windows::Foundation::AsyncStatus const& status)
-				{	
-					if (info.GetResults() != TranscodeFailureReason::None || status != winrt::Windows::Foundation::AsyncStatus::Completed)
-					{
-						throw L"Saving was unsuccessful";
-					}
-				});
-			while (saveOperation.Status() == winrt::Windows::Foundation::AsyncStatus::Started)
-			{
-				std::this_thread::sleep_for(std::chrono::microseconds(20));
-			}
-		}
-		else
-		{
-			throw L"User cancelled the file selection";
-		}
 		co_return;
     }
 

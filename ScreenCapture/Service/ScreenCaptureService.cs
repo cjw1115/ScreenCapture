@@ -12,15 +12,13 @@ using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.Imaging;
 using Windows.Media.Editing;
-using Windows.Media.MediaProperties;
-using Windows.Media.Transcoding;
 using Windows.Storage;
 using Windows.UI.Popups;
 using Windows.UI.Xaml.Controls;
 
 namespace ScreenCapture.Service
 {
-    public class ScreenCaptureService:ScreenCaptureNativeComponent.IScreenCaptureService
+    public class ScreenCaptureService:IScreenCaptureService
     {
         [DllImport("Kernel32.dll")]
         private static extern bool QueryPerformanceCounter(out long lpPerformanceCount);
@@ -160,37 +158,7 @@ namespace ScreenCapture.Service
 
         private async Task RenderCompositionToFile(Windows.Storage.StorageFile file,Windows.UI.Xaml.Controls.ProgressBar progressBar)
         {
-            if (file != null)
-            {
-                // Call RenderToFileAsync
-                var mp4Profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
-                var saveOperation = _mediaComposition.RenderToFileAsync(file, MediaTrimmingPreference.Fast, mp4Profile);
-                saveOperation.Progress = new AsyncOperationProgressHandler<TranscodeFailureReason, double>((info, progress) =>
-                {
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    progressBar.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        progressBar.Value = progress;
-                    });
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                });
-                saveOperation.Completed = new AsyncOperationWithProgressCompletedHandler<TranscodeFailureReason, double>((info, status) =>
-                {
-                    var results = info.GetResults();
-                    if (results != TranscodeFailureReason.None || status != AsyncStatus.Completed)
-                    {
-                        throw new Exception("Saving was unsuccessful");
-                    }
-                });
-                while(saveOperation.Status ==  AsyncStatus.Started)
-                {
-                    await Task.Delay(20);
-                }
-            }
-            else
-            {
-                throw new Exception("User cancelled the file selection");
-            }
+            throw new NotImplementedException();
         }
 
         private async Task _renderCaptuedImagesToFiles()

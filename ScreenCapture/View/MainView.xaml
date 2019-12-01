@@ -1,0 +1,35 @@
+﻿<Page x:Class="ScreenCapture.View.MainView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:converter="using:ScreenCapture.Converter"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:ScreenCapture.View"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+      mc:Ignorable="d">
+    <Page.Resources>
+        <converter:ProgressForegroundConverter x:Key="ProgressForegroundConverter" />
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Margin="20"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Orientation="Horizontal"
+                    Spacing="8">
+            <Button Click="{x:Bind _vm.StartCaptureAsync}" Content="Start Capture" />
+            <Button Click="{x:Bind _vm.StopCapture}" Content="Stop Capture" />
+            <Button Click="{x:Bind _vm.SaveToFile}" Content="Save To File" />
+        </StackPanel>
+        <Grid Grid.Row="1" Margin="20,0">
+            <ProgressBar Height="10"
+                         Foreground="{x:Bind _vm.ProgressVM.Status, Mode=OneWay, Converter={StaticResource ProgressForegroundConverter}}"
+                         Maximum="100"
+                         Minimum="0"
+                         Value="{x:Bind _vm.ProgressVM.Progress, Mode=OneWay}" />
+        </Grid>
+    </Grid>
+</Page>
