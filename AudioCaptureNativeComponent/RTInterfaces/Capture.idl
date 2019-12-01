@@ -10,6 +10,7 @@ namespace AudioCaptureNativeComponent
 		void Pause();
 		void Stop();
 		void Reset();
+		void Mute(Boolean isMute);
 
 		event Windows.Foundation.EventHandler<__int64> DataReceived;
         event Windows.Foundation.EventHandler<int> CaptureStop;

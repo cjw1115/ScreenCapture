@@ -68,6 +68,9 @@ void CaptureHelper::Start(const std::function<void(WAVEFORMATEX*)>& notifyStart,
 				HRESULT hr = audioClient->Start();
 				UINT packetLength;
 				int count = 0;
+				byte silentBuffer[1920 * 8];
+				memset(silentBuffer, 0, sizeof(silentBuffer));
+
 				while (captureIndicator)
 				{
 					if (isPause)
@@ -81,15 +84,23 @@ void CaptureHelper::Start(const std::function<void(WAVEFORMATEX*)>& notifyStart,
 					{
 						count++;
 						hr = captureClient->GetBuffer(&buffer, &frameCount, &flag, NULL, NULL);
-						if (flag == AUDCLNT_BUFFERFLAGS_SILENT)
+						/*if (flag == AUDCLNT_BUFFERFLAGS_SILENT)
 						{
 							notifyProcessing((byte*)buffer, frameCount * wavFormat->nBlockAlign);
 						}
 						else
 						{
 							notifyProcessing((byte*)buffer, frameCount * wavFormat->nBlockAlign);
+						}*/
+						if (!_isMute)
+						{
+							notifyProcessing((byte*)buffer, frameCount * wavFormat->nBlockAlign);
 						}
-
+						else
+						{
+							notifyProcessing(silentBuffer, frameCount * wavFormat->nBlockAlign);
+						}
+						
 						captureClient->ReleaseBuffer(frameCount);
 						packetLength = 0;
 						hr = captureClient->GetNextPacketSize(&packetLength);
@@ -144,5 +155,11 @@ void CaptureHelper::Stop()
 {
 	captureIndicator = false;
 	isPause = false;
-
 }
+
+void CaptureHelper::Mute(bool isMute)
+{
+	_isMute = isMute;
+}
+
+	

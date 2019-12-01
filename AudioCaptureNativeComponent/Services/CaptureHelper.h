@@ -17,6 +17,7 @@ public:
 	void Resume();
 	void Pause();
 	void Stop();
+	void Mute(bool isMute);
 private:
 	CComPtr<IAudioClient> audioClient;
 	CComPtr<IMMDeviceEnumerator> mmDeviceEnumerator;
@@ -28,4 +29,5 @@ private:
 
 	bool captureIndicator = false;
 	bool isPause = false;
+	bool _isMute = false;
 };

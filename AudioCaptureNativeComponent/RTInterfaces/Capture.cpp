@@ -91,6 +91,11 @@ namespace winrt::AudioCaptureNativeComponent::implementation
 	{
 		_currentDuration = 0;
 	}
+	void Capture::Mute(bool isMute)
+	{
+		_captureHelper.Mute(isMute);
+	}
+
 
 	IAsyncAction Capture::SetPlaybackFile(winrt::Windows::Storage::StorageFile targetFile)
 	{

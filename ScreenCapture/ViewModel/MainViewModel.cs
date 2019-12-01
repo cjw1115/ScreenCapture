@@ -31,14 +31,43 @@ namespace ScreenCapture.ViewModel
 
         public ProgressViewModel ProgressVM { get; } = new ProgressViewModel { Status = ProgressStatus.Progressing, Progress = 0 };
 
+        private bool _isCaptureBackgroundAudio = true;
+        public bool IsCaptureBackgroundAudio
+        {
+            get { return _isCaptureBackgroundAudio; }
+            set
+            {
+                if (SetProperty(ref _isCaptureBackgroundAudio, value))
+                {
+                    _loopbackCapture.Mute(!value);
+                }
+            }
+        }
+
+        private bool _isCaptureMicrophoneAudio = true;
+        public bool IsCaptureMicrophoneAudio
+        {
+            get { return _isCaptureMicrophoneAudio; }
+            set 
+            {
+                if(SetProperty(ref _isCaptureMicrophoneAudio, value))
+                {
+                    _voiceCapture.Mute(!value);
+                }
+            }
+        }
+
         public MainViewModel()
         {
         }
-
         public async void StartCaptureAsync()
         {
             _audioLoopbackFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_LOOPBACK_FILE, CreationCollisionOption.ReplaceExisting);
             _audioVoiceFile = await Windows.Storage.ApplicationData.Current.LocalCacheFolder.CreateFileAsync(CAPTURE_AUIDO_VOICE_FILE, CreationCollisionOption.ReplaceExisting);
+
+            _voiceCapture.Mute(!IsCaptureMicrophoneAudio);
+            _loopbackCapture.Mute(!IsCaptureBackgroundAudio);
+
             //For syncing the video frame and background audio frame.
             //Need start the scrren capture service at first,then start the loopback service, the voice service should be last one.
             //Start scrren capture service will take almost 1s. but start loopback service takes littile silliseconds. 

@@ -10,12 +10,13 @@
     <Page.Resources>
         <converter:ProgressForegroundConverter x:Key="ProgressForegroundConverter" />
     </Page.Resources>
-    <Grid>
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <StackPanel Margin="20"
+        <StackPanel Margin="0,20"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Orientation="Horizontal"
@@ -24,7 +25,11 @@
             <Button Click="{x:Bind _vm.StopCapture}" Content="Stop Capture" />
             <Button Click="{x:Bind _vm.SaveToFile}" Content="Save To File" />
         </StackPanel>
-        <Grid Grid.Row="1" Margin="20,0">
+        <StackPanel Grid.Row="1" Margin="0,20">
+            <CheckBox Content="Background Audio" IsChecked="{x:Bind _vm.IsCaptureBackgroundAudio, Mode=TwoWay}" />
+            <CheckBox Content="Microphone Audio" IsChecked="{x:Bind _vm.IsCaptureMicrophoneAudio, Mode=TwoWay}" />
+        </StackPanel>
+        <Grid Grid.Row="2" Margin="0,20">
             <ProgressBar Height="10"
                          Foreground="{x:Bind _vm.ProgressVM.Status, Mode=OneWay, Converter={StaticResource ProgressForegroundConverter}}"
                          Maximum="100"

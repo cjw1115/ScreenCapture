@@ -48,6 +48,7 @@ namespace winrt::AudioCaptureNativeComponent::implementation
         void Pause();
         void Stop();
 		void Reset();
+		void Mute(bool isMute);
 
 		IAsyncAction SetPlaybackFile(winrt::Windows::Storage::StorageFile targetFile);
 		void SetPlaybackPosition(UINT64 position);
