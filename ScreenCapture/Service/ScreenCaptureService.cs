@@ -1,5 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas;
 using ScreenCapture.Helper;
+using ScreenCapture.Model;
 using ScreenCaptureNativeComponent;
 using System;
 using System.Collections.Concurrent;
@@ -30,7 +31,7 @@ namespace ScreenCapture.Service
         private StorageFolder _captureFolder;
         private TimeSpan _startTime;
 
-        private ConcurrentQueue<SoftwareBitmap> _capturedImages;
+        private ConcurrentQueue<CapturedVideoFrame> _capturedImages;
         private ConcurrentQueue<TimeSpan> _captuedRelatedTimes;
         private uint _imageCounter = 0;
         private bool _capturing = false;
@@ -83,7 +84,7 @@ namespace ScreenCapture.Service
 
         private void _startCaptureInternal(GraphicsCaptureItem item)
         {
-            _capturedImages = new ConcurrentQueue<SoftwareBitmap>();
+            _capturedImages = new ConcurrentQueue<CapturedVideoFrame>();
             _captuedRelatedTimes = new ConcurrentQueue<TimeSpan>();
 
             _framePool = Direct3D11CaptureFramePool.Create(CanvasDevice.GetSharedDevice(), DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, item.Size);
@@ -98,6 +99,7 @@ namespace ScreenCapture.Service
 
         private async void _onFrameArraved()
         {
+            int index = 1;
             while (_capturing)
             {
                 QueryPerformanceCounter(out long start);
@@ -106,8 +108,7 @@ namespace ScreenCapture.Service
                     if (frame == null)
                         continue;
                     var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied);
-
-                    _capturedImages.Enqueue(bitmap);
+                    _capturedImages.Enqueue(new CapturedVideoFrame(index++, bitmap));
                     _captuedRelatedTimes.Enqueue(frame.SystemRelativeTime);
                 }
                 QueryPerformanceCounter(out long end);
@@ -142,7 +143,6 @@ namespace ScreenCapture.Service
         {
             _mediaComposition = mediaComposition;
             var _capturedImageFiles = await _captureFolder.GetFilesAsync();
-            var fileNames = _capturedImageFiles.Select(m => m.Name).ToList();
             var lastTime = _startTime;
             foreach (var imageFile in _capturedImageFiles)
             {
@@ -168,12 +168,15 @@ namespace ScreenCapture.Service
                 bool re = false;
                 do
                 {
-                    re = _capturedImages.TryDequeue(out SoftwareBitmap bitmap);
+                    re = _capturedImages.TryDequeue(out var videoFrame);
                     if (re)
                     {
-                        var file = await _captureFolder.CreateFileAsync($"Screenshot_{++_imageCounter}.jpeg");
-                        await ImageHelper.SaveSoftwareBitmapToFileAsync(bitmap, file);
-                        bitmap.Dispose();
+                        Task.Run(async () =>
+                        {
+                            var file = await _captureFolder.CreateFileAsync($"Screenshot_{videoFrame.Index}.jpeg");
+                            await ImageHelper.SaveSoftwareBitmapToFileAsync(videoFrame.Bitmap, file);
+                            videoFrame.Bitmap.Dispose();
+                        });
                     }
                 }
                 while (re);
