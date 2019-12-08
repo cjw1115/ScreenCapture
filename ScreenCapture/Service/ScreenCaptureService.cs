@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using MediaEncodingNativeComponent;
+using Microsoft.Graphics.Canvas;
 using ScreenCapture.Helper;
 using ScreenCapture.Model;
 using ScreenCaptureNativeComponent;
@@ -29,12 +30,15 @@ namespace ScreenCapture.Service
         private Direct3D11CaptureFramePool _framePool;
         private GraphicsCaptureSession _seesion;
         private StorageFolder _captureFolder;
+        private string _captureVideoFilePath;
         private TimeSpan _startTime;
 
         private ConcurrentQueue<CapturedVideoFrame> _capturedImages;
         private ConcurrentQueue<TimeSpan> _captuedRelatedTimes;
         private uint _imageCounter = 0;
         private bool _capturing = false;
+
+        private MediaEncoder _mediaEncoder = new MediaEncoder();
 
         private async Task<StorageFolder> _setupCpatureFolder()
         {
@@ -80,12 +84,17 @@ namespace ScreenCapture.Service
             _capturing = false;
             _seesion.Dispose();
             _framePool.Dispose();
+            _mediaEncoder.CloseVideoWriter();
         }
 
         private void _startCaptureInternal(GraphicsCaptureItem item)
         {
             _capturedImages = new ConcurrentQueue<CapturedVideoFrame>();
             _captuedRelatedTimes = new ConcurrentQueue<TimeSpan>();
+
+            _captureVideoFilePath = System.IO.Path.Combine(_captureFolder.Path, "ouput.wmv");
+
+            _mediaEncoder.OpenVideoWriter(_captureVideoFilePath, item.Size.Width, item.Size.Height);
 
             _framePool = Direct3D11CaptureFramePool.Create(CanvasDevice.GetSharedDevice(), DirectXPixelFormat.B8G8R8A8UIntNormalized, 1, item.Size);
             _seesion = _framePool.CreateCaptureSession(item);
@@ -97,9 +106,18 @@ namespace ScreenCapture.Service
             Task.Run(_onFrameArraved);
         }
 
+        [ComImport]
+        [Guid("5B0D3235-4DBA-4D44-865E-8F1D0E4FD04D")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        unsafe interface IMemoryBufferByteAccess
+        {
+            void GetBuffer(out byte* buffer, out uint capacity);
+        }
+
         private async void _onFrameArraved()
         {
             int index = 1;
+            TimeSpan _lastTimeStamp = _startTime;
             while (_capturing)
             {
                 QueryPerformanceCounter(out long start);
@@ -107,9 +125,13 @@ namespace ScreenCapture.Service
                 {
                     if (frame == null)
                         continue;
-                    var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied);
-                    _capturedImages.Enqueue(new CapturedVideoFrame(index++, bitmap));
-                    _captuedRelatedTimes.Enqueue(frame.SystemRelativeTime);
+                    using(var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied))
+                    {
+                        _processBitmap(bitmap, frame.SystemRelativeTime - _lastTimeStamp);
+                        _lastTimeStamp = frame.SystemRelativeTime;
+                    }
+                    //_capturedImages.Enqueue(new CapturedVideoFrame(index++, bitmap));
+                    //_captuedRelatedTimes.Enqueue(frame.SystemRelativeTime);
                 }
                 QueryPerformanceCounter(out long end);
                 var spendTime = TimeSpan.FromTicks(end - start);
@@ -117,6 +139,19 @@ namespace ScreenCapture.Service
                 {
                     await Task.Delay((TimeSpan.FromMilliseconds(41) - spendTime).Milliseconds);
                 }
+            }
+        }
+
+        private unsafe void _processBitmap(SoftwareBitmap bitmap,TimeSpan duration)
+        {
+            using (var buffer = bitmap.LockBuffer(BitmapBufferAccessMode.Read))
+            {
+                var reference = (IMemoryBufferByteAccess)buffer.CreateReference();
+
+                reference.GetBuffer(out byte* nativeBuffer, out uint capacity);
+                byte[] frameBuffer = new byte[capacity];
+                Marshal.Copy((IntPtr)nativeBuffer, frameBuffer, 0, frameBuffer.Length);
+                _mediaEncoder.WriteVideoFrame(frameBuffer, duration.Ticks);
             }
         }
 
@@ -142,18 +177,21 @@ namespace ScreenCapture.Service
         private async Task SetupMediaComposition(MediaComposition mediaComposition)
         {
             _mediaComposition = mediaComposition;
-            var _capturedImageFiles = await _captureFolder.GetFilesAsync();
-            var lastTime = _startTime;
-            foreach (var imageFile in _capturedImageFiles)
-            {
-                if (_captuedRelatedTimes.TryDequeue(out TimeSpan relatedTime))
-                {
-                    var duration = relatedTime - lastTime;
-                    lastTime = relatedTime;
-                    MediaClip clip = await MediaClip.CreateFromImageFileAsync(imageFile, duration);
-                    _mediaComposition.Clips.Add(clip);
-                }
-            }
+            var captureVideoFile = await StorageFile.GetFileFromPathAsync(_captureVideoFilePath);
+            var clip = await MediaClip.CreateFromFileAsync(captureVideoFile);
+            mediaComposition.Clips.Add(clip);
+            //var _capturedImageFiles = await _captureFolder.GetFilesAsync();
+            //var lastTime = _startTime;
+            //foreach (var imageFile in _capturedImageFiles)
+            //{
+            //    if (_captuedRelatedTimes.TryDequeue(out TimeSpan relatedTime))
+            //    {
+            //        var duration = relatedTime - lastTime;
+            //        lastTime = relatedTime;
+            //        MediaClip clip = await MediaClip.CreateFromImageFileAsync(imageFile, duration);
+            //        _mediaComposition.Clips.Add(clip);
+            //    }
+            //}
         }
 
         private async Task RenderCompositionToFile(Windows.Storage.StorageFile file,Windows.UI.Xaml.Controls.ProgressBar progressBar)

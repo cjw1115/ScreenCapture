@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AudioCaptureNativeComponent
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQ.Common", "CQ.Common\CQ.Common.csproj", "{6BBCFEBD-AA8F-4177-91EF-15F40961D0FC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaEncodingNativeComponent", "MediaEncodingNativeComponent\MediaEncodingNativeComponent.vcxproj", "{3384B1C6-C719-4993-B8A1-6ACECAA718AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -102,6 +104,22 @@ Global
 		{6BBCFEBD-AA8F-4177-91EF-15F40961D0FC}.Release|x64.Build.0 = Release|x64
 		{6BBCFEBD-AA8F-4177-91EF-15F40961D0FC}.Release|x86.ActiveCfg = Release|x86
 		{6BBCFEBD-AA8F-4177-91EF-15F40961D0FC}.Release|x86.Build.0 = Release|x86
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|ARM.ActiveCfg = Debug|ARM
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|ARM.Build.0 = Debug|ARM
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|x64.ActiveCfg = Debug|x64
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|x64.Build.0 = Debug|x64
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|x86.ActiveCfg = Debug|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Debug|x86.Build.0 = Debug|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|Any CPU.ActiveCfg = Release|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|ARM.ActiveCfg = Release|ARM
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|ARM.Build.0 = Release|ARM
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|ARM64.ActiveCfg = Release|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|x64.ActiveCfg = Release|x64
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|x64.Build.0 = Release|x64
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|x86.ActiveCfg = Release|Win32
+		{3384B1C6-C719-4993-B8A1-6ACECAA718AB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

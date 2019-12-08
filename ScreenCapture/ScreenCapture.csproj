@@ -183,6 +183,10 @@
       <Project>{6BBCFEBD-AA8F-4177-91EF-15F40961D0FC}</Project>
       <Name>CQ.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MediaEncodingNativeComponent\MediaEncodingNativeComponent.vcxproj">
+      <Project>{3384b1c6-c719-4993-b8a1-6acecaa718ab}</Project>
+      <Name>MediaEncodingNativeComponent</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ScreenCaptureNativeComponent\ScreenCaptureNativeComponent.vcxproj">
       <Project>{9bbf348f-4f92-4820-a8e9-3d39b73d0c8e}</Project>
       <Name>ScreenCaptureNativeComponent</Name>

@@ -1,0 +1,11 @@
+namespace MediaEncodingNativeComponent
+{
+    [default_interface]
+    runtimeclass MediaEncoder
+    {
+		MediaEncoder();
+		void OpenVideoWriter(String videoPath, Int32 videoWidth, Int32 videoHeight);
+		void WriteVideoFrame(UInt8[] frameBuffer, Int64 duration);
+		void CloseVideoWriter();
+    }
+}
