@@ -19,7 +19,7 @@ namespace ScreenCapture.ViewModel
         private UINotificationService _notificationService = DependencyManager.Instance.ResolveType<UINotificationService>();
 
         private bool _isNativeMode = false;
-        private ScreenCaptureNativeComponent.IScreenCaptureService _screenCapture = DependencyManager.Instance.ResolveType<ScreenCaptureService>();
+        private ScreenCaptureService _screenCapture = DependencyManager.Instance.ResolveType<ScreenCaptureService>();
 
 
         private readonly string CAPTURE_AUIDO_LOOPBACK_FILE = "loopback.wav";
@@ -97,7 +97,6 @@ namespace ScreenCapture.ViewModel
 
                 Windows.Storage.StorageFile videoFile = await picker.PickSaveFileAsync();
 
-                await _screenCapture.WaitForImageRenderring();
                 await _screenCapture.SetupMediaComposition(_mediaComposition);
                 _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioVoiceFile));
                 _mediaComposition.BackgroundAudioTracks.Add(await BackgroundAudioTrack.CreateFromFileAsync(_audioLoopbackFile));

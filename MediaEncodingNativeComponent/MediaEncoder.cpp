@@ -1,13 +1,12 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "MediaEncoder.h"
 #include "MediaEncoder.g.cpp"
 
 // Format constants
 const UINT32 VIDEO_FPS = 30;
-const UINT32 VIDEO_BIT_RATE = 800000;
-const GUID   VIDEO_ENCODING_FORMAT = MFVideoFormat_WMV3;
+const UINT32 VIDEO_BIT_RATE = 950000;
+const GUID   VIDEO_ENCODING_FORMAT = MFVideoFormat_H264;
 const GUID   VIDEO_INPUT_FORMAT = MFVideoFormat_RGB32;
-const UINT32 VIDEO_FRAME_COUNT = 20 * VIDEO_FPS;
 
 template <class T> void SafeRelease(T** ppT)
 {
