@@ -73,9 +73,6 @@ namespace ScreenCapture.Service
         public void StopCapture()
         {
             _capturing = false;
-            _seesion.Dispose();
-            _framePool.Dispose();
-            _mediaEncoder.CloseVideoWriter();
         }
 
         private void _startCaptureInternal(GraphicsCaptureItem item)
@@ -125,6 +122,9 @@ namespace ScreenCapture.Service
                     await Task.Delay((TimeSpan.FromMilliseconds(41) - spendTime).Milliseconds);
                 }
             }
+            _seesion.Dispose();
+            _framePool.Dispose();
+            _mediaEncoder.CloseVideoWriter();
         }
 
         private unsafe void _processBitmap(SoftwareBitmap bitmap,TimeSpan duration)
@@ -132,10 +132,21 @@ namespace ScreenCapture.Service
             using (var buffer = bitmap.LockBuffer(BitmapBufferAccessMode.Read))
             {
                 var reference = (IMemoryBufferByteAccess)buffer.CreateReference();
-
+                
                 reference.GetBuffer(out byte* nativeBuffer, out uint capacity);
                 byte[] frameBuffer = new byte[capacity];
-                Marshal.Copy((IntPtr)nativeBuffer, frameBuffer, 0, frameBuffer.Length);
+                for (int i = 0; i < bitmap.PixelHeight; i++)
+                {
+                    for (int j = 0; j < bitmap.PixelWidth; j++)
+                    {
+                        var indexManaged = (i * bitmap.PixelWidth + j) * 4;
+                        var indexNative = ((bitmap.PixelHeight - 1 - i) * bitmap.PixelWidth + j) * 4;
+                        frameBuffer[indexManaged + 0] = nativeBuffer[indexNative + 0];
+                        frameBuffer[indexManaged + 1] = nativeBuffer[indexNative + 1];
+                        frameBuffer[indexManaged + 2] = nativeBuffer[indexNative + 2];
+                        frameBuffer[indexManaged + 3] = nativeBuffer[indexNative + 3];
+                    }
+                }
                 _mediaEncoder.WriteVideoFrame(frameBuffer, duration.Ticks);
             }
         }
